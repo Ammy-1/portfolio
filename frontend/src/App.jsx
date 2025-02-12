@@ -1,34 +1,43 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './App.css';
+import {AppBar, Box, Tab, Tabs, Toolbar, Typography} from '@mui/material';
+import {BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import LandingPg from './pages/LandingPg';
+import Wordle from './pages/Wordle';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <BrowserRouter>
+      <Box>
+       <AppBar position="sticky" sx={{borderRadius: 1}}>
+            <Toolbar sx={{display:'flex', flexDirection: 'row', padding: '0px 20px'}}>
+            
+             <Typography
+                variant="h5"
+                component="div"
+                sx={{
+                  fontWeight:'fontWeightBold',
+                  flexGrow: 1,
+                  display: 'flex'
+                }}
+              >
+                menu
+              </Typography>
+              
+                <Tabs textColor='white'value={1}>
+                  <Tab label='Home' value={1} component={Link} to='/'/>
+                  <Tab label='Wordle+' value={2} component={Link} to='/wordle'/>
+                </Tabs>
+
+            </Toolbar>
+          </AppBar>
+        </Box>
+     
+      <Routes>
+        <Route path='/' element={<LandingPg />}/>
+        <Route path='/wordle' element={<Wordle/>}/>
+      </Routes>
+
+    </BrowserRouter>
   )
 }
 
