@@ -1,6 +1,6 @@
-import { Typography, Box, Paper, TextField, Button, ButtonGroup, Alert, Modal, IconButton } from "@mui/material"
+import { Typography, Box, Paper, TextField, Button, ButtonGroup, Alert, Modal, IconButton, Popover } from "@mui/material"
 import { useEffect, useState } from "react";
-import {Close} from '@mui/icons-material';
+import {Close, InfoOutlined} from '@mui/icons-material';
 import axios from 'axios';
 
 function Wordle() {
@@ -16,6 +16,18 @@ function Wordle() {
     p: 3,
     color: 'black'
   };
+
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleInfoClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleInfoClose = () => {
+    setAnchorEl(null);
+  };
+
+  const infoOpen = Boolean(anchorEl);
 
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
@@ -36,7 +48,6 @@ function Wordle() {
     [{ letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }],
     [{ letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }, { letter: '', feedback: '#ddd' }]
   ];  
-
   const [grid, setGrid] = useState(initGrid);
 
   const initLetters = {
@@ -68,14 +79,12 @@ function Wordle() {
     Z: "#ddd"
   }
   const [letters, setLetters] = useState(initLetters);
-
-  const [guess, setGuess] = useState('');
   const [word, setWord] = useState('');
+  const [guess, setGuess] = useState('');
   const [prevGuesses, setPrevGuesses] = useState([]);
 
   const fetchWord = async () => {
     const response = await axios.get('http://localhost:8080/wordle/word');
-    console.log(response.data.word);
     setWord(response.data.word);
   }
 
@@ -84,7 +93,6 @@ function Wordle() {
   }, []);
   
   function handleGuess() {
-    console.log(prevGuesses);
     setShowAlert(false);
     if (guess.length !== 5) {
       setShowAlert(true);
@@ -100,8 +108,6 @@ function Wordle() {
   }
 
   const checkGuess = async () => {
-
-    console.log(guess);
     const checkedGuess = guess.toUpperCase();
     try {
       // Send the guess to the backend
@@ -111,7 +117,6 @@ function Wordle() {
       
       // Get feedback from the response and update the state
       const feedback = response.data.feedback
-      console.log(feedback);
 
       // update the letter clues
       const updatedLetters = { ...letters };
@@ -123,31 +128,41 @@ function Wordle() {
         updatedGrid[turn][i] = { letter: checkedGuess[i], feedback: feedback[i] };
       } 
       setGrid (updatedGrid);
-      console.log(updatedGrid);
       setLetters(updatedLetters);
       setTurn(turn + 1);
       setPrevGuesses([...prevGuesses, checkedGuess]);
-      handleEndGame();
-      
-      
+      handleEndGame(checkedGuess);
       
     } catch (error) {
       console.error("Error making guess:", error.response?.data || error.message);
     }
   };
 
-  function handleEndGame() {
-    if (guess === word || turn === maxTurns) {
-      setWon(guess === word);
+  function handleEndGame(checkedGuess) {
+    if (checkedGuess === word || turn === maxTurns) {
+      setWon(checkedGuess === word);
       handleOpen();
       setDisableEnter(true);
     }
   }
 
+  const randomGuess = async () => {
+    try {
+      // fetch a random guess from backend
+      const response = await axios.get('http://localhost:8080/wordle/random');
+      
+      const randGuess = response.data.random;
+      setGuess(randGuess);
+    } catch (error) {
+      console.error("Error making guess:", error.response?.data || error.message);
+    }
+  };
+
   function resetGame() {
     setGrid(initGrid);
     setLetters(initLetters);
     setTurn(0);
+    setPrevGuesses([]);
     setShowAlert(false);
     setWon(false);
     setDisableEnter(false);
@@ -169,7 +184,8 @@ function Wordle() {
     <Box sx={{ flexGrow: 1, padding:'30px', width: '40vw' }}> 
       <Typography variant="h3" sx={{textAlign: "center", color: '#222', paddingBottom: '30px'}}>Wordle+</Typography>
       <Paper sx={{padding: '20px'}} >
-        <Typography variant="h5" sx={{padding: '20px', color: 'primary.main'}}>Figure out the mystery word:</Typography>
+        <Typography variant="h5" sx={{padding: '20px', color: 'primary.main', fontWeight: 'bold'}}>Figure out the mystery word</Typography>
+
         <Box sx={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'baseline', gap: '20px'}}>
          
           <TextField  
@@ -194,14 +210,16 @@ function Wordle() {
         <Box sx={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'baseline', padding: '30px', gap: '20px'}}>
           <Typography variant="body1">Or make a guess for me:</Typography>
             <ButtonGroup>
-              <Button size="small">Random guess</Button>
+              <Button size="small" onClick={randomGuess}>Random guess</Button>
               
             </ButtonGroup>
-            <Typography>{word}</Typography>
         </Box>
-        <Typography fontWeight='bold'>Clues found:</Typography>
+          <Box  sx={{display: 'flex',  gap: '2px', justifyContent: 'center', alignItems: 'center'}}>
+            <Typography fontWeight='bold'>Clues found</Typography>
+            <IconButton color="primary" onClick={handleInfoClick}><InfoOutlined/></IconButton>
+          </Box>
           <Box sx={{display: 'flex', flexWrap: 'wrap', gap: '2px', justifyContent: 'center', padding: '5px 50px'}}>
-            {Object.entries(letters).map((l, index) => <Box sx={{padding: '5px'}} key={index} backgroundColor={l[1]}>{l[0]}</Box>)}
+            {Object.entries(letters).map((l, index) => <Box sx={{padding: '4px'}} key={index} backgroundColor={l[1]}>{l[0]}</Box>)}
           </Box>
           <Button sx={{paddingTop: '15px'}} onClick={resetGame}>New Game?</Button>
       </Paper>
@@ -215,8 +233,20 @@ function Wordle() {
               <Box sx={{display: 'flex'}} key={`row${y}`}>
                 {row.map((value, x) => {
                   return (
-                    <Box variant='outined' sx={{width: '70px', height: '70px', backgroundColor: value.feedback, margin: '5px', flexShrink: 2}} key={`col${x}`}>
-                      {value.letter}
+                    <Box 
+                      variant='outined' 
+                      sx={{
+                        width: '70px', 
+                        height: '70px', 
+                        backgroundColor: value.feedback, 
+                        margin: '5px', 
+                        flexShrink: 2,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }} 
+                      key={`col${x}`}>
+                      <Typography variant="h5" sx= {{fontWeight: 'bold', color: 'white'}}>{value.letter}</Typography>
                     </Box>
                   )
                 })}
@@ -249,6 +279,33 @@ function Wordle() {
         </Box>
       </Box>
     </Modal>
+
+    <Popover
+        open={infoOpen}
+        anchorEl={anchorEl}
+        onClose={handleInfoClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+      >
+        <Typography sx={{ fontWeight: 'bold', padding: '20px' }}>Different colours indicate how close your guesses are:</Typography>
+        <Box sx={{display: 'flex',  gap: '10px', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', padding: '0px 0px 20px 40px'}}>
+          <Box sx={{display: 'flex',  gap: '2px', justifyContent: 'center', alignItems: 'center'}}>
+            <Box sx={{width: '15px', height: '15px', backgroundColor: 'success.light'}}></Box>
+            <Typography> = correct letter in correct position</Typography>
+          </Box>
+          <Box sx={{display: 'flex',  gap: '2px', justifyContent: 'center', alignItems: 'center'}}>
+            <Box sx={{width: '15px', height: '15px', backgroundColor: 'warning.light'}}></Box>
+            <Typography> = letter in word but incorrect position</Typography>
+          </Box>
+          <Box sx={{display: 'flex',  gap: '2px', justifyContent: 'center', alignItems: 'center'}}>
+            <Box sx={{width: '15px', height: '15px', backgroundColor: '#aaa'}}></Box>
+            <Typography > = letter not in word</Typography>
+          </Box>
+        </Box>
+       
+    </Popover>
   </Box>
   )
 }

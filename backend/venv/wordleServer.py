@@ -4,7 +4,7 @@ from english_words import get_english_words_set
 from random import choice
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:5173")  # Allow CORS requests only from your frontend
+CORS(app, origins="*")  # Allow CORS requests only from your frontend
 
 targetWord = ''
 
@@ -19,6 +19,7 @@ def getWord():
         words = file.read().splitlines()
     targetWord = choice(words)
     return jsonify({'word': targetWord.strip()})
+
 
 def getbank():
     with open("wordBank.txt", 'w') as file:
@@ -44,8 +45,21 @@ def getFeedback(guess, targetWord):
         elif guess[i] in targetWord:
             feedback.append('warning.light') 
         else:
-            feedback.append('#ddd') 
+            feedback.append('#aaa') 
     return feedback
+
+## gets a word to be guessed by the player
+@app.route("/wordle/random", methods=['GET'])
+def getRandom():
+    with open("wordBank.txt", 'r') as file:
+        if not file.readline(): 
+            getbank()
+        file.seek(0)  
+        words = file.read().splitlines()
+        file.close()
+    randGuess = choice(words)
+    return jsonify({'random': randGuess.strip()})
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
