@@ -2,6 +2,7 @@ import { Typography, Box, Paper, TextField, Button, ButtonGroup, Alert, Modal, I
 import { useEffect, useState } from "react";
 import {Close, InfoOutlined} from '@mui/icons-material';
 import axios from 'axios';
+import API_BASE_URL from "../config";
 
 function Wordle() {
   const modalStyle = {
@@ -84,7 +85,7 @@ function Wordle() {
   const [prevGuesses, setPrevGuesses] = useState([]);
 
   const fetchWord = async () => {
-    const response = await axios.get('http://localhost:8080/wordle/word');
+    const response = await axios.get(`${API_BASE_URL}/wordle/word`);
     setWord(response.data.word);
   }
 
@@ -111,7 +112,7 @@ function Wordle() {
     const checkedGuess = guess.toUpperCase();
     try {
       // Send the guess to the backend
-      const response = await axios.post('http://localhost:8080/wordle/check', {
+      const response = await axios.post(`${API_BASE_URL}/wordle/check`, {
         guess: checkedGuess
       });
       
@@ -149,7 +150,7 @@ function Wordle() {
   const randomGuess = async () => {
     try {
       // fetch a random guess from backend
-      const response = await axios.get('http://localhost:8080/wordle/random');
+      const response = await axios.get(`${API_BASE_URL}/wordle/random`);
       
       const randGuess = response.data.random;
       setGuess(randGuess);
